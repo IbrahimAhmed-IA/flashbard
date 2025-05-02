@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { ThemeProvider } from './components/ThemeProvider';
+import { LanguageProvider, useLanguage } from './components/LanguageProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import DeckList from './components/DeckList';
 import StudyView from './components/StudyView';
@@ -8,11 +10,12 @@ import type { Deck, CardData } from './types';
 import { downloadJson, readJsonFile } from './lib/fileUtils';
 import { Brain, Layers } from 'lucide-react';
 import { useTheme } from './components/ThemeProvider';
-import { useLanguage } from './components/LanguageProvider';
 import { ThemeToggle } from './components/ThemeToggle';
 import { LanguageToggle } from './components/LanguageToggle';
+import { cn } from './lib/utils';
 
-function App() {
+function AppContent() {
+  const { t, language } = useLanguage();
   const [decks, setDecks] = useState<Deck[]>(() => {
     const savedDecks = localStorage.getItem('flashcard-decks');
     return savedDecks ? JSON.parse(savedDecks) : [];
@@ -155,67 +158,80 @@ function App() {
   };
 
   const { theme } = useTheme();
-  const { t, isRTL } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
-      <header className="border-b border-primary/10 bg-background shadow-md">
-        <div className="container mx-auto p-4 max-w-5xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className={`${isRTL ? 'ml-3' : 'mr-3'} h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300`}>
+    <div className={cn(
+      "min-h-screen bg-background text-foreground",
+      language === 'ar' && 'font-arabic'
+    )}>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-20 items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+              <div className="relative h-12 w-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
                 <Brain className="h-7 w-7 text-white" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {t('app.name')}
-                </h1>
-                <p className="text-xs md:text-sm text-muted-foreground">{t('app.description')}</p>
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient">
+                {t('app.name')}
+              </h1>
+              <p className="text-sm text-muted-foreground hidden md:block max-w-md leading-relaxed">
+                {t('app.description')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-primary/10 px-6 py-2.5 text-sm font-medium text-primary shadow-sm hover:shadow-md transition-all duration-300 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-blue-500" />
+                <span className="font-semibold">{decks.length}</span>
+                <span className="text-muted-foreground">{decks.length === 1 ? t('app.deck') : t('app.decks')}</span>
+                <div className="h-4 w-px bg-border mx-2"></div>
+                <span className="font-semibold">{decks.reduce((total, deck) => total + deck.cards.length, 0)}</span>
+                <span className="text-muted-foreground">{t('app.cards')}</span>
               </div>
             </div>
-            <div className={`flex items-center ${isRTL ? 'space-x-reverse' : ''} space-x-3`}>
+            <div className="flex items-center gap-2">
               <ThemeToggle />
               <LanguageToggle />
-              <div className="flex items-center rounded-full bg-primary/5 border border-primary/10 px-4 py-1.5 text-xs font-medium text-primary shadow-sm">
-                <Layers className={`${isRTL ? 'ml-1' : 'mr-1'} h-3.5 w-3.5`} />
-                <span>{decks.length} {decks.length === 1 ? t('app.deck') : t('app.decks')} • </span>
-                <span>{decks.reduce((total, deck) => total + deck.cards.length, 0)} {t('app.cards')}</span>
-              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto p-4 max-w-5xl pt-8">
-        {isStudying && activeDeck ? (
-          <StudyView
-            deck={activeDeck}
-            onUpdateCard={(card) => updateCard(activeDeck.id, card)}
-            onExit={endStudySession}
-          />
-        ) : (
-          <Tabs defaultValue="decks" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 rounded-xl p-1 backdrop-blur-sm bg-primary/5 border">
-              <TabsTrigger
-                value="decks"
-                className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
-              >
-                {t('tabs.decks')}
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
-              >
-                {t('tabs.settings')}
-              </TabsTrigger>
-              <TabsTrigger
-                value="about"
-                className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
-              >
-                {t('tabs.about')}
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="decks" className="animate-in fade-in-50 duration-300">
+      <main className="container py-6">
+        <Tabs defaultValue="decks" className="w-full">
+          <TabsList className="w-full justify-start border-b bg-transparent p-0">
+            <TabsTrigger
+              value="decks"
+              className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t('tabs.decks')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="settings"
+              className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t('tabs.settings')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="about"
+              className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              {t('tabs.about')}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="decks" className="mt-6">
+            {isStudying ? (
+              <StudyView
+                deck={activeDeck!}
+                onUpdateCard={(card) => updateCard(activeDeck!.id, card)}
+                onExit={endStudySession}
+              />
+            ) : (
               <DeckList
                 decks={decks}
                 onCreateDeck={createDeck}
@@ -227,42 +243,45 @@ function App() {
                 onStudyDeck={startStudySession}
                 onExportDeck={exportDeck}
               />
-            </TabsContent>
-            <TabsContent value="settings" className="animate-in fade-in-50 duration-300">
-              <Settings
-                onImportDeck={importDeck}
-                onClearAllData={() => {
-                  if (window.confirm(t('settings.confirmClearData'))) {
-                    setDecks([]);
-                    setActiveDeck(null);
-                    localStorage.removeItem('flashcard-decks');
-                  }
-                }}
-              />
-            </TabsContent>
-            <TabsContent value="about" className="animate-in fade-in-50 duration-300">
-              <About />
-            </TabsContent>
-          </Tabs>
-        )}
+            )}
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <Settings
+              onImportDeck={importDeck}
+              onClearAllData={() => {
+                if (window.confirm(t('settings.confirmClearData'))) {
+                  setDecks([]);
+                  setActiveDeck(null);
+                  localStorage.removeItem('flashcard-decks');
+                }
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="about" className="mt-6">
+            <About />
+          </TabsContent>
+        </Tabs>
       </main>
 
-      <footer className="py-8 mt-12 border-t border-primary/10 bg-background">
-        <div className="container mx-auto max-w-5xl px-4 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md transform hover:scale-105 transition-transform duration-300">
-              <Brain className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">{t('footer.text')}</p>
-          <div className={`mt-2 flex justify-center ${isRTL ? 'space-x-reverse' : ''} space-x-4`}>
-            <ThemeToggle />
-            <LanguageToggle />
-          </div>
+      <footer className="border-t py-6 md:py-0">
+        <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+          <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+            {t('footer.text')}
+          </p>
         </div>
       </footer>
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </ThemeProvider>
+  );
+}

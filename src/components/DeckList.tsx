@@ -147,17 +147,17 @@ const DeckList: React.FC<DeckListProps> = ({
       </div>
 
       {decks.length === 0 ? (
-        <div className="text-center p-12 border-2 border-dashed rounded-xl bg-gradient-to-b from-muted/50 to-muted/30 shadow-inner">
+        <div className="text-center p-12 border-2 border-dashed rounded-xl bg-gradient-to-b from-muted/50 to-muted/30 shadow-inner hover:shadow-lg transition-all duration-300">
           <div className="mb-4">
-            <BookOpen className="mx-auto h-16 w-16 text-muted-foreground opacity-70" />
+            <BookOpen className="mx-auto h-16 w-16 text-muted-foreground opacity-70 animate-bounce" />
           </div>
-          <h3 className="text-xl font-medium mb-3">{t('decklist.noDecks')}</h3>
+          <h3 className="text-xl font-medium mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t('decklist.noDecks')}</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             {t('decklist.createFirstPrompt')}
           </p>
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-md"
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
             size="lg"
           >
             <Plus className={`${isRTL ? 'ml-2' : 'mr-2'} h-5 w-5`} />
@@ -169,48 +169,48 @@ const DeckList: React.FC<DeckListProps> = ({
           {decks.map((deck) => (
             <Card
               key={deck.id}
-              className="hover:shadow-lg transition-all duration-200 border-2 overflow-hidden card-hover"
+              className="group hover:shadow-xl transition-all duration-300 border-2 overflow-hidden bg-gradient-to-b from-background to-background/80 hover:border-blue-500/50 dark:hover:border-blue-400/50"
             >
-              <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b">
-                <CardTitle className="truncate text-blue-800 dark:text-blue-300">{deck.name}</CardTitle>
-                <CardDescription className="truncate">{deck.description}</CardDescription>
+              <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-b">
+                <CardTitle className="truncate text-blue-800 dark:text-blue-300 group-hover:text-blue-600 dark:group-hover:text-blue-200 transition-colors duration-300">{deck.name}</CardTitle>
+                <CardDescription className="truncate text-blue-600/70 dark:text-blue-400/70">{deck.description}</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
-                <div className="text-sm space-y-2">
+                <div className="text-sm space-y-3">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center text-muted-foreground">
-                      <Layers className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'}`} />
+                      <Layers className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'} text-blue-500`} />
                       <span>{t('deck.cards')}</span>
                     </div>
-                    <span className="font-medium text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">
+                    <span className="font-medium text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full shadow-sm">
                       {deck.cards.length}
                     </span>
                   </div>
                   {deck.lastStudied && (
                     <div className="flex justify-between items-center">
                       <div className="flex items-center text-muted-foreground">
-                        <Clock className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'}`} />
+                        <Clock className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'} text-green-500`} />
                         <span>{t('deck.lastStudied')}</span>
                       </div>
-                      <span className="font-medium text-green-800 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
+                      <span className="font-medium text-green-800 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-full shadow-sm">
                         {new Date(deck.lastStudied).toLocaleDateString()}
                       </span>
                     </div>
                   )}
                 </div>
               </CardContent>
-              <Separator />
+              <Separator className="bg-gradient-to-r from-blue-200 to-purple-200 dark:from-blue-800 dark:to-purple-800" />
               <CardFooter className="pt-4 pb-4 gap-2 flex-col sm:flex-row">
                 <Button
                   variant="outline"
-                  className="flex-1 border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:hover:bg-blue-900/20"
+                  className="flex-1 border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:hover:bg-blue-900/20 transition-all duration-300"
                   onClick={() => handleSelectDeck(deck)}
                 >
                   {t('deck.cards')}
                 </Button>
                 <Button
                   variant="default"
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
                   onClick={() => onStudyDeck(deck)}
                   disabled={deck.cards.length === 0}
                 >
@@ -221,7 +221,7 @@ const DeckList: React.FC<DeckListProps> = ({
                   size="icon"
                   onClick={() => onExportDeck(deck.id)}
                   title={t('deck.export')}
-                  className="border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:hover:bg-blue-900/20"
+                  className="border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:hover:bg-blue-900/20 transition-all duration-300"
                 >
                   <Download className="h-4 w-4" />
                 </Button>
