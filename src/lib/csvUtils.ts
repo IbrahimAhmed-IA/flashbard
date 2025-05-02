@@ -42,7 +42,8 @@ export class CSVUtils {
       if (values.length !== headers.length) continue;
 
       const card: CardData = {
-        id: `${deckId}-${i}`,
+        id: crypto.randomUUID(),
+        deckId,
         front: this.unescapeCSV(values[0]),
         back: this.unescapeCSV(values[1]),
         created: new Date().toISOString(),
@@ -52,10 +53,10 @@ export class CSVUtils {
         ease: 2.5,
         repetitions: 0,
         nextReview: null,
-        difficulty: 0.5,
+        difficulty: 0,
         category: values[2] || undefined,
-        tags: values[3] ? values[3].split(';') : undefined,
-        media: values[4] ? this.parseMedia(values[4]) : undefined,
+        tags: values[3] ? values[3].split(';').map(tag => tag.trim()) : undefined,
+        media: values[4] ? JSON.parse(values[4]) : undefined,
         reviewHistory: []
       };
 

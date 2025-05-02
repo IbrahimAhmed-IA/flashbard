@@ -120,7 +120,10 @@ export class EnhancedSpacedRepetition {
 
     const recentReviews = card.reviewHistory.slice(-5);
     const averageQuality = recentReviews.reduce((sum, review) => sum + review.quality, 0) / recentReviews.length;
-    const responseTimeVariance = this.calculateResponseTimeVariance(recentReviews);
+    const reviewsWithResponseTime = recentReviews.filter(review => review.responseTime !== undefined);
+    const responseTimeVariance = reviewsWithResponseTime.length >= 2 
+      ? this.calculateResponseTimeVariance(reviewsWithResponseTime as { responseTime: number }[])
+      : 0;
     
     // Difficulty increases with lower quality and higher response time variance
     return Math.min(1, Math.max(0, 

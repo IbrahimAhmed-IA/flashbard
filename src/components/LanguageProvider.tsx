@@ -8,6 +8,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
+  isRTL: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -22,10 +23,16 @@ export function useLanguage() {
 
 type TranslationValue = string | { [key: string]: TranslationValue };
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
+export function LanguageProvider({ 
+  children,
+  defaultLanguage = 'en'
+}: { 
+  children: React.ReactNode;
+  defaultLanguage?: 'en' | 'ar';
+}) {
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('language');
-    return (saved === 'ar' || saved === 'en') ? saved : 'en';
+    return (saved === 'ar' || saved === 'en') ? saved : defaultLanguage;
   });
 
   useEffect(() => {
@@ -62,7 +69,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, isRTL: language === 'ar' }}>
       {children}
     </LanguageContext.Provider>
   );

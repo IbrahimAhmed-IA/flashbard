@@ -76,6 +76,7 @@ function AppContent() {
       if (deck.id === deckId) {
         const newCard: CardData = {
           id: crypto.randomUUID(),
+          deckId,
           front,
           back,
           created: new Date().toISOString(),
@@ -85,7 +86,8 @@ function AppContent() {
           repetitions: 0,
           nextReview: null,
           difficulty: 0,
-          lastReview: null
+          lastReview: null,
+          reviewHistory: []
         };
         return {
           ...deck,

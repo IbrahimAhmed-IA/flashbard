@@ -100,7 +100,8 @@ export const DeckView: React.FC<DeckViewProps> = ({
     if (!newCard.front || !newCard.back) return;
 
     const card: CardData = {
-      id: `${deck.id}-${deck.cards.length + 1}`,
+      id: crypto.randomUUID(),
+      deckId: deck.id,
       front: newCard.front,
       back: newCard.back,
       created: new Date().toISOString(),
@@ -110,7 +111,7 @@ export const DeckView: React.FC<DeckViewProps> = ({
       ease: 2.5,
       repetitions: 0,
       nextReview: null,
-      difficulty: 0.5,
+      difficulty: 0,
       category: newCard.category,
       tags: newCard.tags,
       media: newCard.media,

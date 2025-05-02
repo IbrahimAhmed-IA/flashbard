@@ -1,5 +1,6 @@
 export interface CardData {
   id: string;
+  deckId: string;
   front: string;
   back: string;
   created: string;

@@ -37,6 +37,7 @@ export interface DailyStats {
 
 export interface CardPerformance {
   cardId: string;
+  deckId: string;
   front: string;
   back: string;
   totalReviews: number;
@@ -126,6 +127,7 @@ class AnalyticsManager {
     if (!performance) {
       performance = {
         cardId: card.id,
+        deckId: card.deckId,
         front: card.front,
         back: card.back,
         totalReviews: 0,

@@ -9,6 +9,8 @@ export interface ExportOptions {
 
 export interface ImportOptions {
   format: 'json' | 'csv' | 'txt';
+  name?: string;
+  description?: string;
   mergeStrategy?: 'replace' | 'merge' | 'skip';
 }
 
@@ -115,35 +117,37 @@ export class ExportImportManager {
 
   private importFromJSON(data: string, options: ImportOptions): Deck {
     const importData = JSON.parse(data);
+    const deckId = crypto.randomUUID();
     const deck: Deck = {
-      id: crypto.randomUUID(),
+      id: deckId,
       name: importData.name,
-      description: importData.description,
-      cards: importData.cards.map((card: any) => ({
-        id: crypto.randomUUID(),
-        front: card.front,
-        back: card.back,
-        created: new Date().toISOString(),
-        lastReviewed: null,
-        lastReview: null,
-        interval: card.interval || 0,
-        ease: card.ease || 2.5,
-        repetitions: card.repetitions || 0,
-        nextReview: null,
-        difficulty: 0.5,
-        tags: card.tags || [],
-        media: card.media || [],
-        reviewHistory: card.reviewHistory || [],
-      })),
+      description: importData.description || '',
       created: new Date().toISOString(),
       lastStudied: null,
       algorithm: 'superMemo2',
       settings: {
         newCardsPerDay: 20,
-        reviewCardsPerDay: 100,
-        maxInterval: 36500,
-        minEase: 1.3,
+        reviewCardsPerDay: 50,
+        maxInterval: 365,
+        minEase: 1.3
       },
+      cards: importData.cards.map((card: any) => ({
+        id: crypto.randomUUID(),
+        deckId,
+        front: card.front,
+        back: card.back,
+        created: card.created || new Date().toISOString(),
+        lastReviewed: card.lastReviewed || null,
+        lastReview: card.lastReview || null,
+        interval: card.interval || 0,
+        ease: card.ease || 2.5,
+        repetitions: card.repetitions || 0,
+        nextReview: card.nextReview || null,
+        difficulty: card.difficulty || 0,
+        tags: card.tags || [],
+        media: card.media || [],
+        reviewHistory: card.reviewHistory || []
+      })),
       studyStats: importData.studyStats || {
         totalReviews: 0,
         averageScore: 0,
@@ -151,162 +155,124 @@ export class ExportImportManager {
         streak: 0,
       },
     };
-
     return deck;
   }
 
   private importFromCSV(data: string, options: ImportOptions): Deck {
+    const deckId = crypto.randomUUID();
     const lines = data.split('\n');
-    const headers = lines[0].split(',');
     const cards: CardData[] = [];
-
+    
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',');
-      const card: CardData = {
-        id: crypto.randomUUID(),
-        front: values[0],
-        back: values[1],
-        created: new Date().toISOString(),
-        lastReviewed: null,
-        lastReview: null,
-        interval: 0,
-        ease: 2.5,
-        repetitions: 0,
-        nextReview: null,
-        difficulty: 0.5,
-        tags: [],
-        media: [],
-        reviewHistory: [],
-      };
-
-      if (headers.includes('tags')) {
-        const tagIndex = headers.indexOf('tags');
-        card.tags = values[tagIndex] ? values[tagIndex].split(';') : [];
+      if (values.length >= 2) {
+        const card: CardData = {
+          id: crypto.randomUUID(),
+          deckId,
+          front: values[0],
+          back: values[1],
+          created: new Date().toISOString(),
+          lastReviewed: null,
+          lastReview: null,
+          interval: 0,
+          ease: 2.5,
+          repetitions: 0,
+          nextReview: null,
+          difficulty: 0,
+          tags: values[2] ? values[2].split(';') : [],
+          media: values[3] ? JSON.parse(values[3]) : [],
+          reviewHistory: []
+        };
+        cards.push(card);
       }
-
-      if (headers.includes('interval')) {
-        const intervalIndex = headers.indexOf('interval');
-        card.interval = parseInt(values[intervalIndex]) || 0;
-      }
-
-      if (headers.includes('ease')) {
-        const easeIndex = headers.indexOf('ease');
-        card.ease = parseFloat(values[easeIndex]) || 2.5;
-      }
-
-      if (headers.includes('repetitions')) {
-        const repetitionsIndex = headers.indexOf('repetitions');
-        card.repetitions = parseInt(values[repetitionsIndex]) || 0;
-      }
-
-      cards.push(card);
     }
 
     return {
-      id: crypto.randomUUID(),
-      name: 'Imported Deck',
-      description: 'Imported from CSV',
-      cards,
+      id: deckId,
+      name: options.name || 'Imported Deck',
+      description: options.description || 'Imported from CSV',
       created: new Date().toISOString(),
       lastStudied: null,
       algorithm: 'superMemo2',
       settings: {
         newCardsPerDay: 20,
-        reviewCardsPerDay: 100,
-        maxInterval: 36500,
-        minEase: 1.3,
+        reviewCardsPerDay: 50,
+        maxInterval: 365,
+        minEase: 1.3
       },
-      studyStats: {
-        totalReviews: 0,
-        averageScore: 0,
-        lastWeekReviews: 0,
-        streak: 0,
-      },
+      cards
     };
   }
 
   private importFromTXT(data: string, options: ImportOptions): Deck {
-    const lines = data.split('\n');
+    const deckId = crypto.randomUUID();
     const cards: CardData[] = [];
-    let currentCard: Partial<CardData> | null = null;
-
+    const lines = data.split('\n');
+    let currentCard: Partial<CardData> = {};
+    
     for (const line of lines) {
-      if (line.startsWith('Card ')) {
-        if (currentCard) {
+      if (line.trim() === '') {
+        if (currentCard.front && currentCard.back) {
           cards.push({
             id: crypto.randomUUID(),
+            deckId,
             front: currentCard.front || '',
             back: currentCard.back || '',
-            created: new Date().toISOString(),
-            lastReviewed: null,
-            lastReview: null,
+            created: currentCard.created || new Date().toISOString(),
+            lastReviewed: currentCard.lastReviewed || null,
+            lastReview: currentCard.lastReview || null,
             interval: currentCard.interval || 0,
             ease: currentCard.ease || 2.5,
             repetitions: currentCard.repetitions || 0,
-            nextReview: null,
-            difficulty: 0.5,
+            nextReview: currentCard.nextReview || null,
+            difficulty: currentCard.difficulty || 0,
             tags: currentCard.tags || [],
             media: currentCard.media || [],
-            reviewHistory: currentCard.reviewHistory || [],
+            reviewHistory: currentCard.reviewHistory || []
           });
+          currentCard = {};
         }
-        currentCard = {};
-      } else if (currentCard) {
-        if (line.startsWith('Front: ')) {
-          currentCard.front = line.slice(7);
-        } else if (line.startsWith('Back: ')) {
-          currentCard.back = line.slice(6);
-        } else if (line.startsWith('Tags: ')) {
-          currentCard.tags = line.slice(6).split(', ');
-        } else if (line.startsWith('Interval: ')) {
-          currentCard.interval = parseInt(line.slice(10)) || 0;
-        } else if (line.startsWith('Ease: ')) {
-          currentCard.ease = parseFloat(line.slice(6)) || 2.5;
-        } else if (line.startsWith('Repetitions: ')) {
-          currentCard.repetitions = parseInt(line.slice(13)) || 0;
-        }
+      } else if (line.startsWith('Q:')) {
+        currentCard.front = line.substring(2).trim();
+      } else if (line.startsWith('A:')) {
+        currentCard.back = line.substring(2).trim();
       }
     }
-
-    if (currentCard) {
+    
+    if (currentCard.front && currentCard.back) {
       cards.push({
         id: crypto.randomUUID(),
+        deckId,
         front: currentCard.front || '',
         back: currentCard.back || '',
-        created: new Date().toISOString(),
-        lastReviewed: null,
-        lastReview: null,
+        created: currentCard.created || new Date().toISOString(),
+        lastReviewed: currentCard.lastReviewed || null,
+        lastReview: currentCard.lastReview || null,
         interval: currentCard.interval || 0,
         ease: currentCard.ease || 2.5,
         repetitions: currentCard.repetitions || 0,
-        nextReview: null,
-        difficulty: 0.5,
+        nextReview: currentCard.nextReview || null,
+        difficulty: currentCard.difficulty || 0,
         tags: currentCard.tags || [],
         media: currentCard.media || [],
-        reviewHistory: currentCard.reviewHistory || [],
+        reviewHistory: currentCard.reviewHistory || []
       });
     }
 
     return {
-      id: crypto.randomUUID(),
-      name: 'Imported Deck',
-      description: 'Imported from TXT',
-      cards,
+      id: deckId,
+      name: options.name || 'Imported Deck',
+      description: options.description || 'Imported from TXT',
       created: new Date().toISOString(),
       lastStudied: null,
       algorithm: 'superMemo2',
       settings: {
         newCardsPerDay: 20,
-        reviewCardsPerDay: 100,
-        maxInterval: 36500,
-        minEase: 1.3,
+        reviewCardsPerDay: 50,
+        maxInterval: 365,
+        minEase: 1.3
       },
-      studyStats: {
-        totalReviews: 0,
-        averageScore: 0,
-        lastWeekReviews: 0,
-        streak: 0,
-      },
+      cards
     };
   }
 }
