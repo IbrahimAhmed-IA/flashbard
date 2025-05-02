@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 @layer base {
@@ -72,6 +72,52 @@ body {
   }
 }
 
+/* RTL Support */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Correcting Tailwind spacing in RTL */
+.rtl .space-x-1 > :not([hidden]) ~ :not([hidden]),
+.rtl .space-x-2 > :not([hidden]) ~ :not([hidden]),
+.rtl .space-x-3 > :not([hidden]) ~ :not([hidden]),
+.rtl .space-x-4 > :not([hidden]) ~ :not([hidden]),
+.rtl .space-x-5 > :not([hidden]) ~ :not([hidden]),
+.rtl .space-x-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+/* RTL margin overrides */
+.rtl .mr-1 { margin-right: 0; margin-left: 0.25rem; }
+.rtl .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+.rtl .mr-3 { margin-right: 0; margin-left: 0.75rem; }
+.rtl .mr-4 { margin-right: 0; margin-left: 1rem; }
+.rtl .mr-5 { margin-right: 0; margin-left: 1.25rem; }
+.rtl .mr-6 { margin-right: 0; margin-left: 1.5rem; }
+
+.rtl .ml-1 { margin-left: 0; margin-right: 0.25rem; }
+.rtl .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+.rtl .ml-3 { margin-left: 0; margin-right: 0.75rem; }
+.rtl .ml-4 { margin-left: 0; margin-right: 1rem; }
+.rtl .ml-5 { margin-left: 0; margin-right: 1.25rem; }
+.rtl .ml-6 { margin-left: 0; margin-right: 1.5rem; }
+
+/* RTL padding overrides */
+.rtl .pl-1 { padding-left: 0; padding-right: 0.25rem; }
+.rtl .pl-2 { padding-left: 0; padding-right: 0.5rem; }
+.rtl .pl-3 { padding-left: 0; padding-right: 0.75rem; }
+.rtl .pl-4 { padding-left: 0; padding-right: 1rem; }
+
+.rtl .pr-1 { padding-right: 0; padding-left: 0.25rem; }
+.rtl .pr-2 { padding-right: 0; padding-left: 0.5rem; }
+.rtl .pr-3 { padding-right: 0; padding-left: 0.75rem; }
+.rtl .pr-4 { padding-right: 0; padding-left: 1rem; }
+
+/* RTL text alignment overrides */
+.rtl .text-left { text-align: right; }
+.rtl .text-right { text-align: left; }
+
 /* Custom Animations */
 @keyframes flip {
   0% {
@@ -101,4 +147,37 @@ body {
 .card-hover:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Animations for app transitions */
+.animate-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.fade-in-50 {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Dark mode specific styles */
+.dark .gradient-text {
+  background: linear-gradient(to right, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark img {
+  filter: brightness(0.9) contrast(1.1);
+}
+
+/* Focus styles for better accessibility */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
 }

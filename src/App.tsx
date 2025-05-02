@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DeckList from '@/components/DeckList';
-import StudyView from '@/components/StudyView';
-import Settings from '@/components/Settings';
-import type { Deck, CardData } from '@/types';
-import { downloadJson, readJsonFile } from '@/lib/fileUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import DeckList from './components/DeckList';
+import StudyView from './components/StudyView';
+import Settings from './components/Settings';
+import About from './components/About';
+import type { Deck, CardData } from './types';
+import { downloadJson, readJsonFile } from './lib/fileUtils';
 import { Brain, Layers } from 'lucide-react';
+import { useTheme } from './components/ThemeProvider';
+import { useLanguage } from './components/LanguageProvider';
+import { ThemeToggle } from './components/ThemeToggle';
+import { LanguageToggle } from './components/LanguageToggle';
 
 function App() {
   const [decks, setDecks] = useState<Deck[]>(() => {
@@ -149,27 +154,32 @@ function App() {
     }
   };
 
+  const { theme } = useTheme();
+  const { t, isRTL } = useLanguage();
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <header className="border-b bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
+      <header className="border-b border-primary/10 bg-background shadow-md">
         <div className="container mx-auto p-4 max-w-5xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="mr-3 h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <Brain className="h-6 w-6 text-white" />
+              <div className={`${isRTL ? 'ml-3' : 'mr-3'} h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300`}>
+                <Brain className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  FlashLearn
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  {t('app.name')}
                 </h1>
-                <p className="text-xs text-muted-foreground">Spaced repetition flashcards</p>
+                <p className="text-xs md:text-sm text-muted-foreground">{t('app.description')}</p>
               </div>
             </div>
-            <div className="flex items-center">
-              <div className="flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                <Layers className="mr-1 h-3.5 w-3.5" />
-                {decks.length} {decks.length === 1 ? 'deck' : 'decks'} •
-                {decks.reduce((total, deck) => total + deck.cards.length, 0)} cards
+            <div className={`flex items-center ${isRTL ? 'space-x-reverse' : ''} space-x-3`}>
+              <ThemeToggle />
+              <LanguageToggle />
+              <div className="flex items-center rounded-full bg-primary/5 border border-primary/10 px-4 py-1.5 text-xs font-medium text-primary shadow-sm">
+                <Layers className={`${isRTL ? 'ml-1' : 'mr-1'} h-3.5 w-3.5`} />
+                <span>{decks.length} {decks.length === 1 ? t('app.deck') : t('app.decks')} • </span>
+                <span>{decks.reduce((total, deck) => total + deck.cards.length, 0)} {t('app.cards')}</span>
               </div>
             </div>
           </div>
@@ -185,21 +195,27 @@ function App() {
           />
         ) : (
           <Tabs defaultValue="decks" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-3 rounded-xl p-1 backdrop-blur-sm bg-primary/5 border">
               <TabsTrigger
                 value="decks"
-                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+                className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
               >
-                Flashcard Decks
+                {t('tabs.decks')}
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
-                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+                className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
               >
-                Settings
+                {t('tabs.settings')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="about"
+                className="rounded-lg text-sm md:text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+              >
+                {t('tabs.about')}
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="decks">
+            <TabsContent value="decks" className="animate-in fade-in-50 duration-300">
               <DeckList
                 decks={decks}
                 onCreateDeck={createDeck}
@@ -212,11 +228,11 @@ function App() {
                 onExportDeck={exportDeck}
               />
             </TabsContent>
-            <TabsContent value="settings">
+            <TabsContent value="settings" className="animate-in fade-in-50 duration-300">
               <Settings
                 onImportDeck={importDeck}
                 onClearAllData={() => {
-                  if (window.confirm('Are you sure you want to delete all decks and cards? This cannot be undone.')) {
+                  if (window.confirm(t('settings.confirmClearData'))) {
                     setDecks([]);
                     setActiveDeck(null);
                     localStorage.removeItem('flashcard-decks');
@@ -224,13 +240,25 @@ function App() {
                 }}
               />
             </TabsContent>
+            <TabsContent value="about" className="animate-in fade-in-50 duration-300">
+              <About />
+            </TabsContent>
           </Tabs>
         )}
       </main>
 
-      <footer className="py-6 mt-12 border-t bg-white">
-        <div className="container mx-auto max-w-5xl px-4 text-center text-sm text-muted-foreground">
-          <p>FlashLearn • A simple flashcard application with spaced repetition</p>
+      <footer className="py-8 mt-12 border-t border-primary/10 bg-background">
+        <div className="container mx-auto max-w-5xl px-4 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md transform hover:scale-105 transition-transform duration-300">
+              <Brain className="h-5 w-5 text-white" />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">{t('footer.text')}</p>
+          <div className={`mt-2 flex justify-center ${isRTL ? 'space-x-reverse' : ''} space-x-4`}>
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
         </div>
       </footer>
     </div>

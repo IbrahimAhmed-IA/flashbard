@@ -6,8 +6,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+} from './ui/card';
+import { Button } from './ui/button';
 import {
   Dialog,
   DialogContent,
@@ -16,13 +16,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import type { Deck, CardData } from '@/types';
+} from './ui/dialog';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Separator } from './ui/separator';
+import type { Deck, CardData } from '../types';
 import DeckView from './DeckView';
 import { BookOpen, Plus, Download, Clock, Layers } from 'lucide-react';
+import { useLanguage } from './LanguageProvider';
 
 interface DeckListProps {
   decks: Deck[];
@@ -47,6 +48,7 @@ const DeckList: React.FC<DeckListProps> = ({
   onStudyDeck,
   onExportDeck
 }) => {
+  const { t, isRTL } = useLanguage();
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
@@ -89,55 +91,55 @@ const DeckList: React.FC<DeckListProps> = ({
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Your Flashcard Decks</h2>
+          <h2 className="text-2xl font-bold mb-1">{t('decklist.title')}</h2>
           <p className="text-muted-foreground text-sm">
-            Select a deck to study or create a new one
+            {t('decklist.subtitle')}
           </p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-md">
-              <Plus className="mr-2 h-4 w-4" />
-              New Deck
+              <Plus className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              {t('decklist.newDeck')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create a new deck</DialogTitle>
+              <DialogTitle>{t('deck.create')}</DialogTitle>
               <DialogDescription>
-                Enter a name and description for your new flashcard deck.
+                {t('decklist.enterDetails')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Name</label>
+                <label htmlFor="name" className="text-sm font-medium">{t('decklist.nameField')}</label>
                 <Input
                   id="name"
                   value={newDeckName}
                   onChange={(e) => setNewDeckName(e.target.value)}
-                  placeholder="e.g., Spanish Vocabulary"
+                  placeholder={t('decklist.namePlaceholder')}
                   className="border-2 focus-visible:ring-blue-500"
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Description (optional)</label>
+                <label htmlFor="description" className="text-sm font-medium">{t('decklist.descriptionField')}</label>
                 <Textarea
                   id="description"
                   value={newDeckDescription}
                   onChange={(e) => setNewDeckDescription(e.target.value)}
-                  placeholder="What is this deck about?"
+                  placeholder={t('decklist.descriptionPlaceholder')}
                   rows={3}
                   className="border-2 focus-visible:ring-blue-500"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t('decklist.cancelButton')}</Button>
               <Button
                 onClick={handleCreateDeck}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                Create Deck
+                {t('decklist.createButton')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -149,17 +151,17 @@ const DeckList: React.FC<DeckListProps> = ({
           <div className="mb-4">
             <BookOpen className="mx-auto h-16 w-16 text-muted-foreground opacity-70" />
           </div>
-          <h3 className="text-xl font-medium mb-3">No decks yet</h3>
+          <h3 className="text-xl font-medium mb-3">{t('decklist.noDecks')}</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Create your first flashcard deck to start learning. Add questions on the front and answers on the back.
+            {t('decklist.createFirstPrompt')}
           </p>
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
             className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-md"
             size="lg"
           >
-            <Plus className="mr-2 h-5 w-5" />
-            Create Your First Deck
+            <Plus className={`${isRTL ? 'ml-2' : 'mr-2'} h-5 w-5`} />
+            {t('decklist.createFirstButton')}
           </Button>
         </div>
       ) : (
@@ -167,30 +169,30 @@ const DeckList: React.FC<DeckListProps> = ({
           {decks.map((deck) => (
             <Card
               key={deck.id}
-              className="hover:shadow-lg transition-all duration-200 border-2 overflow-hidden"
+              className="hover:shadow-lg transition-all duration-200 border-2 overflow-hidden card-hover"
             >
-              <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                <CardTitle className="truncate text-blue-800">{deck.name}</CardTitle>
+              <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b">
+                <CardTitle className="truncate text-blue-800 dark:text-blue-300">{deck.name}</CardTitle>
                 <CardDescription className="truncate">{deck.description}</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center text-muted-foreground">
-                      <Layers className="h-4 w-4 mr-1.5" />
-                      <span>Cards</span>
+                      <Layers className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'}`} />
+                      <span>{t('deck.cards')}</span>
                     </div>
-                    <span className="font-medium text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md">
+                    <span className="font-medium text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">
                       {deck.cards.length}
                     </span>
                   </div>
                   {deck.lastStudied && (
                     <div className="flex justify-between items-center">
                       <div className="flex items-center text-muted-foreground">
-                        <Clock className="h-4 w-4 mr-1.5" />
-                        <span>Last studied</span>
+                        <Clock className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'}`} />
+                        <span>{t('deck.lastStudied')}</span>
                       </div>
-                      <span className="font-medium text-green-800 bg-green-50 px-2 py-0.5 rounded-md">
+                      <span className="font-medium text-green-800 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
                         {new Date(deck.lastStudied).toLocaleDateString()}
                       </span>
                     </div>
@@ -201,10 +203,10 @@ const DeckList: React.FC<DeckListProps> = ({
               <CardFooter className="pt-4 pb-4 gap-2 flex-col sm:flex-row">
                 <Button
                   variant="outline"
-                  className="flex-1 border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                  className="flex-1 border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:hover:bg-blue-900/20"
                   onClick={() => handleSelectDeck(deck)}
                 >
-                  View Cards
+                  {t('deck.cards')}
                 </Button>
                 <Button
                   variant="default"
@@ -212,14 +214,14 @@ const DeckList: React.FC<DeckListProps> = ({
                   onClick={() => onStudyDeck(deck)}
                   disabled={deck.cards.length === 0}
                 >
-                  {deck.cards.length === 0 ? 'Add Cards First' : 'Study Now'}
+                  {deck.cards.length === 0 ? t('deck.addCard') : t('deck.study')}
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => onExportDeck(deck.id)}
-                  title="Export Deck"
-                  className="border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                  title={t('deck.export')}
+                  className="border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:hover:bg-blue-900/20"
                 >
                   <Download className="h-4 w-4" />
                 </Button>

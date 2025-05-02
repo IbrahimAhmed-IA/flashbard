@@ -6,8 +6,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+} from './ui/card';
+import { Button } from './ui/button';
 import {
   Dialog,
   DialogContent,
@@ -16,11 +16,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import type { Deck, CardData } from '@/types';
+} from './ui/dialog';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Separator } from './ui/separator';
+import type { Deck, CardData } from '../types';
 import {
   ArrowLeft,
   Plus,
@@ -29,6 +29,7 @@ import {
   Trash2,
   Download
 } from 'lucide-react';
+import { useLanguage } from './LanguageProvider';
 
 interface DeckViewProps {
   deck: Deck;
@@ -53,6 +54,7 @@ const DeckView: React.FC<DeckViewProps> = ({
   onExportDeck,
   onBack
 }) => {
+  const { t, isRTL } = useLanguage();
   // State for UI
   const [isEditDeckOpen, setIsEditDeckOpen] = useState(false);
   const [isAddCardOpen, setIsAddCardOpen] = useState(false);
@@ -83,7 +85,8 @@ const DeckView: React.FC<DeckViewProps> = ({
   };
 
   const handleDeleteDeck = () => {
-    if (window.confirm(`Are you sure you want to delete "${deck.name}" and all its cards?`)) {
+    const confirmMessage = t('deckview.deleteDeckConfirm').replace('{{deckName}}', deck.name);
+    if (window.confirm(confirmMessage)) {
       onDeleteDeck(deck.id);
       onBack();
     }
@@ -147,7 +150,7 @@ const DeckView: React.FC<DeckViewProps> = ({
   };
 
   const handleDeleteCard = (cardId: string) => {
-    if (window.confirm('Are you sure you want to delete this card?')) {
+    if (window.confirm(t('deckview.deleteCardConfirm'))) {
       // Update local cards immediately
       setLocalCards(prevCards => prevCards.filter(card => card.id !== cardId));
 
@@ -175,8 +178,8 @@ const DeckView: React.FC<DeckViewProps> = ({
           disabled={deck.cards.length === 0}
           className="bg-green-600 hover:bg-green-700"
         >
-          <BookOpen className="mr-2 h-4 w-4" />
-          Study Now
+          <BookOpen className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+          {t('deckview.studyNow')}
         </Button>
       </div>
 
@@ -189,74 +192,74 @@ const DeckView: React.FC<DeckViewProps> = ({
           onClick={() => setIsAddCardOpen(true)}
           variant="outline"
         >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Card
+          <Plus className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+          {t('deckview.addCard')}
         </Button>
         <Button
           onClick={() => setIsEditDeckOpen(true)}
           variant="outline"
         >
-          <Pencil className="mr-2 h-4 w-4" />
-          Edit Deck
+          <Pencil className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+          {t('deckview.editDeck')}
         </Button>
         <Button
           onClick={() => onExportDeck(deck.id)}
           variant="outline"
         >
-          <Download className="mr-2 h-4 w-4" />
-          Export
+          <Download className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+          {t('deckview.export')}
         </Button>
         <Button
           onClick={handleDeleteDeck}
           variant="destructive"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete Deck
+          <Trash2 className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+          {t('deckview.deleteDeck')}
         </Button>
       </div>
 
       <Separator className="my-2" />
 
       <h3 className="text-xl font-semibold mt-6 flex items-center justify-between">
-        <span>Cards ({localCards.length})</span>
+        <span>{t('deckview.cards')} ({localCards.length})</span>
         {localCards.length > 0 && (
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIsAddCardOpen(true)}>
-            <Plus className="mr-1 h-3 w-3" />
-            Add Another
+            <Plus className={`${isRTL ? 'ml-1' : 'mr-1'} h-3 w-3`} />
+            {t('deckview.addAnother')}
           </Button>
         )}
       </h3>
 
       {localCards.length === 0 ? (
-        <div className="text-center p-10 border-2 border-dashed rounded-xl">
-          <p className="text-muted-foreground mb-4">This deck has no cards yet</p>
+        <div className="text-center p-10 border-2 border-dashed rounded-xl bg-muted/30">
+          <p className="text-muted-foreground mb-4">{t('deckview.noCards')}</p>
           <Button onClick={() => setIsAddCardOpen(true)} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Your First Card
+            <Plus className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+            {t('deckview.addFirstCard')}
           </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {localCards.map((card) => (
-            <Card key={card.id} className="hover:shadow-md transition-all duration-200 overflow-hidden">
-              <CardHeader className="pb-2 bg-muted/50">
-                <CardTitle className="text-base">Front</CardTitle>
-                <CardDescription className="whitespace-pre-wrap text-black font-medium">
+            <Card key={card.id} className="hover:shadow-md transition-all duration-200 overflow-hidden border-2">
+              <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b">
+                <CardTitle className="text-base">{t('deckview.front')}</CardTitle>
+                <CardDescription className="whitespace-pre-wrap text-foreground dark:text-foreground font-medium">
                   {card.front}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pb-2 pt-4 bg-white">
-                <h4 className="text-base font-medium mb-1">Back</h4>
+              <CardContent className="pb-2 pt-4 bg-background border-b">
+                <h4 className="text-base font-medium mb-1">{t('deckview.back')}</h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {card.back}
                 </p>
               </CardContent>
-              <CardFooter className="flex justify-end space-x-2 py-2 bg-muted/30">
+              <CardFooter className={`flex justify-end ${isRTL ? 'space-x-reverse' : ''} space-x-2 py-2 bg-muted/30`}>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleOpenEditCard(card)}
-                  className="hover:bg-blue-100 hover:text-blue-700"
+                  className="hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -264,7 +267,7 @@ const DeckView: React.FC<DeckViewProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDeleteCard(card.id)}
-                  className="hover:bg-red-100 hover:text-red-700"
+                  className="hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -278,14 +281,14 @@ const DeckView: React.FC<DeckViewProps> = ({
       <Dialog open={isEditDeckOpen} onOpenChange={setIsEditDeckOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Deck</DialogTitle>
+            <DialogTitle>{t('deckview.editDeckTitle')}</DialogTitle>
             <DialogDescription>
-              Update the name and description of your deck.
+              {t('deckview.editDeckDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label htmlFor="edit-name" className="text-sm font-medium">Name</label>
+              <label htmlFor="edit-name" className="text-sm font-medium">{t('deckview.nameLabel')}</label>
               <Input
                 id="edit-name"
                 value={editedDeckName}
@@ -293,7 +296,7 @@ const DeckView: React.FC<DeckViewProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
+              <label htmlFor="edit-description" className="text-sm font-medium">{t('deckview.descriptionLabel')}</label>
               <Textarea
                 id="edit-description"
                 value={editedDeckDescription}
@@ -303,8 +306,8 @@ const DeckView: React.FC<DeckViewProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDeckOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveDeck}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setIsEditDeckOpen(false)}>{t('deckview.cancelButton')}</Button>
+            <Button onClick={handleSaveDeck}>{t('deckview.saveChanges')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -313,36 +316,36 @@ const DeckView: React.FC<DeckViewProps> = ({
       <Dialog open={isAddCardOpen} onOpenChange={setIsAddCardOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Card</DialogTitle>
+            <DialogTitle>{t('deckview.addCardTitle')}</DialogTitle>
             <DialogDescription>
-              Create a new flashcard with front and back content.
+              {t('deckview.addCardDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label htmlFor="card-front" className="text-sm font-medium">Front</label>
+              <label htmlFor="card-front" className="text-sm font-medium">{t('deckview.frontLabel')}</label>
               <Textarea
                 id="card-front"
                 value={currentCardFront}
                 onChange={(e) => setCurrentCardFront(e.target.value)}
-                placeholder="Question or term"
+                placeholder={t('deckview.frontPlaceholder')}
                 rows={3}
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="card-back" className="text-sm font-medium">Back</label>
+              <label htmlFor="card-back" className="text-sm font-medium">{t('deckview.backLabel')}</label>
               <Textarea
                 id="card-back"
                 value={currentCardBack}
                 onChange={(e) => setCurrentCardBack(e.target.value)}
-                placeholder="Answer or definition"
+                placeholder={t('deckview.backPlaceholder')}
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddCardOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddCard}>Add Card</Button>
+            <Button variant="outline" onClick={() => setIsAddCardOpen(false)}>{t('deckview.cancelButton')}</Button>
+            <Button onClick={handleAddCard}>{t('deckview.addCardButton')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -351,34 +354,36 @@ const DeckView: React.FC<DeckViewProps> = ({
       <Dialog open={isEditCardOpen} onOpenChange={setIsEditCardOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Card</DialogTitle>
+            <DialogTitle>{t('deckview.editCardTitle')}</DialogTitle>
             <DialogDescription>
-              Update the content of this flashcard.
+              {t('deckview.editCardDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label htmlFor="edit-card-front" className="text-sm font-medium">Front</label>
+              <label htmlFor="edit-front" className="text-sm font-medium">{t('deckview.frontLabel')}</label>
               <Textarea
-                id="edit-card-front"
+                id="edit-front"
                 value={currentCardFront}
                 onChange={(e) => setCurrentCardFront(e.target.value)}
+                placeholder={t('deckview.frontPlaceholder')}
                 rows={3}
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="edit-card-back" className="text-sm font-medium">Back</label>
+              <label htmlFor="edit-back" className="text-sm font-medium">{t('deckview.backLabel')}</label>
               <Textarea
-                id="edit-card-back"
+                id="edit-back"
                 value={currentCardBack}
                 onChange={(e) => setCurrentCardBack(e.target.value)}
+                placeholder={t('deckview.backPlaceholder')}
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditCardOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditCard}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setIsEditCardOpen(false)}>{t('deckview.cancelButton')}</Button>
+            <Button onClick={handleEditCard}>{t('deckview.saveCard')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
