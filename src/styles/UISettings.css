@@ -1,0 +1,136 @@
+.ui-settings {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ui-settings h2 {
+  margin: 2rem 0 1rem;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.ui-settings h2:first-child {
+  margin-top: 0;
+}
+
+.setting-group {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.setting-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.setting-group input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+.setting-group input[type="range"] {
+  width: 100%;
+  margin: 0.5rem 0;
+  cursor: pointer;
+}
+
+.setting-group .description {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.grid-columns-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.grid-column-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.grid-column-setting span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.grid-column-setting input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.actions button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: var(--primary-color);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.actions button:hover {
+  background: var(--primary-color-dark);
+}
+
+/* High contrast mode */
+.high-contrast .ui-settings {
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --bg-primary: #000000;
+  --bg-secondary: #1a1a1a;
+  --border-color: #ffffff;
+  --primary-color: #ffff00;
+  --primary-color-dark: #cccc00;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ui-settings * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .ui-settings {
+    padding: 1rem;
+  }
+
+  .grid-columns-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+} 

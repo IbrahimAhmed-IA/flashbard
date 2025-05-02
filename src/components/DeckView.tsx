@@ -26,10 +26,10 @@ import {
   Plus,
   BookOpen,
   Pencil,
-  Trash2,
-  Download
+  Trash2
 } from 'lucide-react';
 import { useLanguage } from './LanguageProvider';
+import { CSVUtils } from '../lib/csvUtils';
 
 interface DeckViewProps {
   deck: Deck;
@@ -39,11 +39,10 @@ interface DeckViewProps {
   onUpdateCard: (deckId: string, card: CardData) => void;
   onDeleteCard: (deckId: string, cardId: string) => void;
   onStudyDeck: (deck: Deck) => void;
-  onExportDeck: (deckId: string) => void;
   onBack: () => void;
 }
 
-const DeckView: React.FC<DeckViewProps> = ({
+export const DeckView: React.FC<DeckViewProps> = ({
   deck,
   onUpdateDeck,
   onDeleteDeck,
@@ -51,10 +50,10 @@ const DeckView: React.FC<DeckViewProps> = ({
   onUpdateCard,
   onDeleteCard,
   onStudyDeck,
-  onExportDeck,
   onBack
 }) => {
-  const { t, isRTL } = useLanguage();
+  const { t, language } = useLanguage();
+  const isRTL = language === 'ar';
   // State for UI
   const [isEditDeckOpen, setIsEditDeckOpen] = useState(false);
   const [isAddCardOpen, setIsAddCardOpen] = useState(false);
@@ -64,6 +63,11 @@ const DeckView: React.FC<DeckViewProps> = ({
   const [currentCardFront, setCurrentCardFront] = useState('');
   const [currentCardBack, setCurrentCardBack] = useState('');
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDeck, setEditedDeck] = useState<Deck>(deck);
+  const [newCard, setNewCard] = useState<Partial<CardData>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   // Local state to track cards for immediate UI updates
   const [localCards, setLocalCards] = useState<CardData[]>(deck.cards);
@@ -93,29 +97,32 @@ const DeckView: React.FC<DeckViewProps> = ({
   };
 
   const handleAddCard = () => {
-    if (currentCardFront.trim() && currentCardBack.trim()) {
-      // Create a temporary new card with a temporary ID for immediate UI update
-      const tempCard: CardData = {
-        id: `temp-${Date.now()}`,
-        front: currentCardFront.trim(),
-        back: currentCardBack.trim(),
-        created: new Date().toISOString(),
-        lastReviewed: null,
-        interval: 0,
-        ease: 2.5
-      };
+    if (!newCard.front || !newCard.back) return;
 
-      // Update local cards immediately for UI
-      setLocalCards(prevCards => [...prevCards, tempCard]);
+    const card: CardData = {
+      id: `${deck.id}-${deck.cards.length + 1}`,
+      front: newCard.front,
+      back: newCard.back,
+      created: new Date().toISOString(),
+      lastReviewed: null,
+      lastReview: null,
+      interval: 0,
+      ease: 2.5,
+      repetitions: 0,
+      nextReview: null,
+      difficulty: 0.5,
+      category: newCard.category,
+      tags: newCard.tags,
+      media: newCard.media,
+      reviewHistory: []
+    };
 
-      // Call the actual add function
-      onAddCard(deck.id, currentCardFront.trim(), currentCardBack.trim());
-
-      // Reset form
-      setCurrentCardFront('');
-      setCurrentCardBack('');
-      setIsAddCardOpen(false);
-    }
+    const updatedDeck = {
+      ...deck,
+      cards: [...deck.cards, card]
+    };
+    onUpdateDeck(updatedDeck);
+    setNewCard({});
   };
 
   const handleEditCard = () => {
@@ -173,14 +180,16 @@ const DeckView: React.FC<DeckViewProps> = ({
           </Button>
           <h2 className="text-2xl font-bold">{deck.name}</h2>
         </div>
-        <Button
-          onClick={() => onStudyDeck(deck)}
-          disabled={deck.cards.length === 0}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          <BookOpen className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
-          {t('deckview.studyNow')}
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={() => onStudyDeck(deck)}
+            disabled={deck.cards.length === 0}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <BookOpen className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+            {t('deckview.studyNow')}
+          </Button>
+        </div>
       </div>
 
       {deck.description && (
@@ -201,13 +210,6 @@ const DeckView: React.FC<DeckViewProps> = ({
         >
           <Pencil className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
           {t('deckview.editDeck')}
-        </Button>
-        <Button
-          onClick={() => onExportDeck(deck.id)}
-          variant="outline"
-        >
-          <Download className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
-          {t('deckview.export')}
         </Button>
         <Button
           onClick={handleDeleteDeck}

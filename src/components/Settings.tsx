@@ -2,10 +2,12 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
-import { Import, Trash2, HelpCircle, Sun, Moon, Monitor, Globe } from 'lucide-react';
+import { Import, Trash2, HelpCircle, Sun, Moon, Monitor, Globe, Settings2 } from 'lucide-react';
 import type { Deck } from '../types';
 import { useTheme } from './ThemeProvider';
 import { useLanguage } from './LanguageProvider';
+import { AccessibilitySettings } from './AccessibilitySettings';
+import { UISettings } from './UISettings';
 
 interface SettingsProps {
   onImportDeck: (file: File) => Promise<Deck>;
@@ -16,17 +18,19 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage, t, isRTL } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.type !== 'application/json') {
-      setImportError('Only JSON files are supported');
+    if (!file.name.endsWith('.json') && !file.name.endsWith('.csv')) {
+      setImportError('Only JSON and CSV files are supported');
       setImportSuccess(null);
       return;
     }
@@ -61,7 +65,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
     <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-4">{t('settings.title')}</h2>
 
-      {/* Theme Settings */}
+      {/* Basic Settings */}
       <Card className="overflow-hidden border-2 shadow-sm">
         <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border-b">
           <CardTitle className="text-violet-700 dark:text-violet-300">{t('settings.theme')}</CardTitle>
@@ -78,7 +82,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
                 onClick={() => setTheme('light')}
                 className={`${theme === 'light' ? 'bg-violet-600 hover:bg-violet-700' : ''}`}
               >
-                <Sun className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+                <Sun className={`${theme === 'light' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
                 {t('settings.lightTheme')}
               </Button>
               <Button
@@ -86,7 +90,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
                 onClick={() => setTheme('dark')}
                 className={`${theme === 'dark' ? 'bg-violet-600 hover:bg-violet-700' : ''}`}
               >
-                <Moon className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+                <Moon className={`${theme === 'dark' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
                 {t('settings.darkTheme')}
               </Button>
               <Button
@@ -94,7 +98,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
                 onClick={() => setTheme('system')}
                 className={`${theme === 'system' ? 'bg-violet-600 hover:bg-violet-700' : ''}`}
               >
-                <Monitor className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+                <Monitor className={`${theme === 'system' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
                 {t('settings.systemTheme')}
               </Button>
             </div>
@@ -111,7 +115,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
                 onClick={() => setLanguage('en')}
                 className={`${language === 'en' ? 'bg-violet-600 hover:bg-violet-700' : ''}`}
               >
-                <Globe className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+                <Globe className={`${language === 'en' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
                 {t('settings.english')}
               </Button>
               <Button
@@ -119,7 +123,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
                 onClick={() => setLanguage('ar')}
                 className={`${language === 'ar' ? 'bg-violet-600 hover:bg-violet-700' : ''}`}
               >
-                <Globe className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+                <Globe className={`${language === 'ar' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
                 {t('settings.arabic')}
               </Button>
             </div>
@@ -127,6 +131,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
         </CardContent>
       </Card>
 
+      {/* Import/Export Settings */}
       <Card className="overflow-hidden border-2 shadow-sm">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b">
           <CardTitle className="text-blue-700 dark:text-blue-300">{t('settings.importExport')}</CardTitle>
@@ -143,7 +148,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
             <div className="flex items-center space-x-2">
               <input
                 type="file"
-                accept=".json"
+                accept=".json,.csv"
                 className="hidden"
                 ref={fileInputRef}
                 onChange={handleFileSelect}
@@ -154,7 +159,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
                 disabled={isImporting}
                 className="border-blue-300 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/50"
               >
-                <Import className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4 text-blue-600 dark:text-blue-400`} />
+                <Import className={`${theme === 'light' ? 'ml-2' : 'mr-2'} h-4 w-4 text-blue-600 dark:text-blue-400`} />
                 {isImporting ? t('settings.importing') : t('settings.importButton')}
               </Button>
             </div>
@@ -167,16 +172,10 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
               <p className="mt-2 text-sm text-green-600 dark:text-green-400">{importSuccess}</p>
             )}
           </div>
-
-          <div className="bg-background p-4 rounded-lg border shadow-sm">
-            <h3 className="text-base font-medium mb-2 text-blue-800 dark:text-blue-300">{t('settings.exportDeck')}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t('settings.exportDeckDesc')}
-            </p>
-          </div>
         </CardContent>
       </Card>
 
+      {/* Data Management */}
       <Card className="overflow-hidden border-2 shadow-sm">
         <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border-b">
           <CardTitle className="text-red-700 dark:text-red-300">{t('settings.dataManagement')}</CardTitle>
@@ -195,7 +194,7 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
               onClick={onClearAllData}
               className="bg-red-600 hover:bg-red-700"
             >
-              <Trash2 className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              <Trash2 className={`${theme === 'light' ? 'ml-2' : 'mr-2'} h-4 w-4`} />
               {t('settings.clearDataButton')}
             </Button>
           </div>
@@ -220,6 +219,49 @@ const Settings: React.FC<SettingsProps> = ({ onImportDeck, onClearAllData }) => 
           </div>
         </CardContent>
       </Card>
+
+      {/* Advanced Settings Toggle */}
+      <div className="flex justify-center">
+        <Button
+          variant="outline"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2"
+        >
+          <Settings2 className="h-4 w-4" />
+          {showAdvanced ? t('settings.hideAdvanced') : t('settings.showAdvanced')}
+        </Button>
+      </div>
+
+      {/* Advanced Settings */}
+      {showAdvanced && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Accessibility Settings */}
+          <Card className="overflow-hidden border-2 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-b">
+              <CardTitle className="text-green-700 dark:text-green-300">{t('accessibility.title')}</CardTitle>
+              <CardDescription>
+                {t('accessibility.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <AccessibilitySettings />
+            </CardContent>
+          </Card>
+
+          {/* UI Settings */}
+          <Card className="overflow-hidden border-2 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-950/30 dark:to-teal-950/30 border-b">
+              <CardTitle className="text-cyan-700 dark:text-cyan-300">{t('ui.title')}</CardTitle>
+              <CardDescription>
+                {t('ui.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <UISettings onClose={() => {}} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

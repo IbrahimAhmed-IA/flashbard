@@ -4,14 +4,24 @@ export interface CardData {
   back: string;
   created: string;
   lastReviewed: string | null;
+  lastReview: Date | null;
   interval: number;  // days until next review
   ease: number;      // ease factor (2.5 default)
+  repetitions: number;
+  nextReview: string | null;
+  difficulty: number;
   category?: string;
   tags?: string[];
-  difficulty?: 'easy' | 'medium' | 'hard';
-  reviewHistory?: {
+  media?: {
+    type: 'image' | 'audio' | 'video';
+    url: string;
+  }[];
+  reviewHistory: {
     date: string;
     quality: ReviewQuality;
+    responseTime?: number;
+    fatigueFactor?: number;
+    stability?: number;
   }[];
 }
 
@@ -24,6 +34,13 @@ export interface Deck {
   lastStudied: string | null;
   category?: string;
   tags?: string[];
+  algorithm: 'superMemo2' | 'leitner';
+  settings: {
+    newCardsPerDay: number;
+    reviewCardsPerDay: number;
+    maxInterval: number;
+    minEase: number;
+  };
   studyStats?: {
     totalReviews: number;
     averageScore: number;

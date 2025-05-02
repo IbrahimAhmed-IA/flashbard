@@ -22,8 +22,9 @@ import { Textarea } from './ui/textarea';
 import { Separator } from './ui/separator';
 import type { Deck, CardData } from '../types';
 import DeckView from './DeckView';
-import { BookOpen, Plus, Download, Clock, Layers } from 'lucide-react';
+import { BookOpen, Plus, Clock, Layers, BarChart2 } from 'lucide-react';
 import { useLanguage } from './LanguageProvider';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 interface DeckListProps {
   decks: Deck[];
@@ -48,11 +49,14 @@ const DeckList: React.FC<DeckListProps> = ({
   onStudyDeck,
   onExportDeck
 }) => {
-  const { t, isRTL } = useLanguage();
+  const { t, language } = useLanguage();
+  const isRTL = language === 'ar';
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedDeckForAnalytics, setSelectedDeckForAnalytics] = useState<Deck | null>(null);
 
   const handleCreateDeck = () => {
     if (newDeckName.trim()) {
@@ -71,6 +75,11 @@ const DeckList: React.FC<DeckListProps> = ({
     setSelectedDeck(null);
   };
 
+  const handleShowAnalytics = (deck: Deck) => {
+    setSelectedDeckForAnalytics(deck);
+    setShowAnalytics(true);
+  };
+
   if (selectedDeck) {
     return (
       <DeckView
@@ -81,7 +90,6 @@ const DeckList: React.FC<DeckListProps> = ({
         onUpdateCard={onUpdateCard}
         onDeleteCard={onDeleteCard}
         onStudyDeck={onStudyDeck}
-        onExportDeck={onExportDeck}
         onBack={handleBackToDecks}
       />
     );
@@ -110,7 +118,7 @@ const DeckList: React.FC<DeckListProps> = ({
                 {t('decklist.enterDetails')}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium">{t('decklist.nameField')}</label>
                 <Input
@@ -175,31 +183,20 @@ const DeckList: React.FC<DeckListProps> = ({
                 <CardTitle className="truncate text-blue-800 dark:text-blue-300 group-hover:text-blue-600 dark:group-hover:text-blue-200 transition-colors duration-300">{deck.name}</CardTitle>
                 <CardDescription className="truncate text-blue-600/70 dark:text-blue-400/70">{deck.description}</CardDescription>
               </CardHeader>
-              <CardContent className="pt-4">
-                <div className="text-sm space-y-3">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center text-muted-foreground">
-                      <Layers className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'} text-blue-500`} />
-                      <span>{t('deck.cards')}</span>
-                    </div>
-                    <span className="font-medium text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full shadow-sm">
-                      {deck.cards.length}
-                    </span>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-2">
+                    <Layers className="h-4 w-4" />
+                    <span>{deck.cards.length} {t('deck.cards')}</span>
                   </div>
                   {deck.lastStudied && (
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center text-muted-foreground">
-                        <Clock className={`h-4 w-4 ${isRTL ? 'ml-1.5' : 'mr-1.5'} text-green-500`} />
-                        <span>{t('deck.lastStudied')}</span>
-                      </div>
-                      <span className="font-medium text-green-800 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2.5 py-1 rounded-full shadow-sm">
-                        {new Date(deck.lastStudied).toLocaleDateString()}
-                      </span>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4" />
+                      <span>{new Date(deck.lastStudied).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>
               </CardContent>
-              <Separator className="bg-gradient-to-r from-blue-200 to-purple-200 dark:from-blue-800 dark:to-purple-800" />
               <CardFooter className="pt-4 pb-4 gap-2 flex-col sm:flex-row">
                 <Button
                   variant="outline"
@@ -209,6 +206,14 @@ const DeckList: React.FC<DeckListProps> = ({
                   {t('deck.cards')}
                 </Button>
                 <Button
+                  variant="outline"
+                  className="flex-1 border-purple-200 hover:bg-purple-50 hover:text-purple-800 dark:border-purple-800 dark:hover:bg-purple-900/20 transition-all duration-300"
+                  onClick={() => handleShowAnalytics(deck)}
+                >
+                  <BarChart2 className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+                  {t('analytics.title')}
+                </Button>
+                <Button
                   variant="default"
                   className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300"
                   onClick={() => onStudyDeck(deck)}
@@ -216,20 +221,25 @@ const DeckList: React.FC<DeckListProps> = ({
                 >
                   {deck.cards.length === 0 ? t('deck.addCard') : t('deck.study')}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => onExportDeck(deck.id)}
-                  title={t('deck.export')}
-                  className="border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:hover:bg-blue-900/20 transition-all duration-300"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={showAnalytics} onOpenChange={setShowAnalytics}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{t('analytics.title')}</DialogTitle>
+            <DialogDescription>
+              {selectedDeckForAnalytics?.name}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedDeckForAnalytics && (
+            <AnalyticsDashboard deck={selectedDeckForAnalytics} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

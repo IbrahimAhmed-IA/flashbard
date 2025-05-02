@@ -8,23 +8,30 @@ import Settings from './components/Settings';
 import About from './components/About';
 import type { Deck, CardData } from './types';
 import { downloadJson, readJsonFile } from './lib/fileUtils';
-import { Brain, Layers } from 'lucide-react';
+import { Brain, Layers, Settings as SettingsIcon, Info, HelpCircle } from 'lucide-react';
 import { useTheme } from './components/ThemeProvider';
 import { ThemeToggle } from './components/ThemeToggle';
 import { LanguageToggle } from './components/LanguageToggle';
 import { cn } from './lib/utils';
+import Tutorial from './components/Tutorial';
+import { Button } from './components/ui/button';
+import { CSVUtils } from './lib/csvUtils';
 
 function AppContent() {
   const { t, language } = useLanguage();
+  const { theme } = useTheme();
   const [decks, setDecks] = useState<Deck[]>(() => {
-    const savedDecks = localStorage.getItem('flashcard-decks');
-    return savedDecks ? JSON.parse(savedDecks) : [];
+    const saved = localStorage.getItem('flashyard-decks');
+    return saved ? JSON.parse(saved) : [];
   });
   const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
   const [isStudying, setIsStudying] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    return localStorage.getItem('tutorial-completed') !== 'true';
+  });
 
   useEffect(() => {
-    localStorage.setItem('flashcard-decks', JSON.stringify(decks));
+    localStorage.setItem('flashyard-decks', JSON.stringify(decks));
   }, [decks]);
 
   const createDeck = (name: string, description: string) => {
@@ -34,7 +41,14 @@ function AppContent() {
       description,
       cards: [],
       lastStudied: null,
-      created: new Date().toISOString()
+      created: new Date().toISOString(),
+      algorithm: 'superMemo2',
+      settings: {
+        newCardsPerDay: 20,
+        reviewCardsPerDay: 50,
+        maxInterval: 365,
+        minEase: 1.3
+      }
     };
     setDecks(prev => [...prev, newDeck]);
     return newDeck;
@@ -67,7 +81,11 @@ function AppContent() {
           created: new Date().toISOString(),
           lastReviewed: null,
           interval: 0,
-          ease: 2.5
+          ease: 2.5,
+          repetitions: 0,
+          nextReview: null,
+          difficulty: 0,
+          lastReview: null
         };
         return {
           ...deck,
@@ -107,33 +125,79 @@ function AppContent() {
   const exportDeck = (deckId: string) => {
     const deck = decks.find(d => d.id === deckId);
     if (deck) {
-      downloadJson(deck, `${deck.name.replace(/\s+/g, '-').toLowerCase()}-export`);
+      downloadJson(deck, `flashyard-${deck.name.replace(/\s+/g, '-').toLowerCase()}-export`);
     }
   };
 
   const importDeck = async (file: File) => {
     try {
-      const importedDeck = await readJsonFile<Deck>(file);
+      let importedDeck: Deck;
 
-      // Validate the imported deck
-      if (!importedDeck.name || !Array.isArray(importedDeck.cards)) {
-        throw new Error('Invalid deck format');
+      if (file.name.endsWith('.csv')) {
+        const content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+
+        const cards = CSVUtils.importFromCSV(content, crypto.randomUUID());
+        importedDeck = {
+          id: crypto.randomUUID(),
+          name: file.name.replace('.csv', ''),
+          description: 'Imported from CSV',
+          cards,
+          created: new Date().toISOString(),
+          lastStudied: null,
+          algorithm: 'superMemo2',
+          settings: {
+            newCardsPerDay: 20,
+            reviewCardsPerDay: 50,
+            maxInterval: 365,
+            minEase: 1.3
+          },
+          studyStats: {
+            totalReviews: 0,
+            averageScore: 0,
+            lastWeekReviews: 0,
+            streak: 0
+          }
+        };
+      } else {
+        importedDeck = await readJsonFile<Deck>(file);
+
+        // Validate the imported deck
+        if (!importedDeck.name || !Array.isArray(importedDeck.cards)) {
+          throw new Error('Invalid deck format');
+        }
+
+        // Generate a new ID to avoid conflicts
+        importedDeck = {
+          ...importedDeck,
+          id: crypto.randomUUID(),
+          created: new Date().toISOString(),
+          lastStudied: null,
+          algorithm: 'superMemo2',
+          settings: {
+            newCardsPerDay: 20,
+            reviewCardsPerDay: 50,
+            maxInterval: 365,
+            minEase: 1.3
+          },
+          cards: importedDeck.cards.map(card => ({
+            ...card,
+            id: crypto.randomUUID(),
+            repetitions: card.repetitions || 0,
+            nextReview: card.nextReview || null,
+            difficulty: card.difficulty || 0,
+            lastReview: card.lastReview || null,
+            reviewHistory: card.reviewHistory || []
+          }))
+        };
       }
 
-      // Generate a new ID to avoid conflicts
-      const newDeck: Deck = {
-        ...importedDeck,
-        id: crypto.randomUUID(),
-        created: new Date().toISOString(),
-        lastStudied: null,
-        cards: importedDeck.cards.map(card => ({
-          ...card,
-          id: crypto.randomUUID()
-        }))
-      };
-
-      setDecks(prev => [...prev, newDeck]);
-      return newDeck;
+      setDecks(prev => [...prev, importedDeck]);
+      return importedDeck;
     } catch (error) {
       console.error('Failed to import deck:', error);
       throw error;
@@ -157,43 +221,59 @@ function AppContent() {
     }
   };
 
-  const { theme } = useTheme();
-
   return (
     <div className={cn(
       "min-h-screen bg-background text-foreground",
-      language === 'ar' && 'font-arabic'
+      language === 'ar' ? 'font-arabic' : 'font-sans'
     )}>
+      {showTutorial && <Tutorial />}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-20 items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-              <div className="relative h-12 w-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="relative h-12 w-12 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 p-1 shadow-lg">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 animate-pulse"></div>
                 <Brain className="h-7 w-7 text-white" />
               </div>
-            </div>
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient">
-                {t('app.name')}
-              </h1>
-              <p className="text-sm text-muted-foreground hidden md:block max-w-md leading-relaxed">
-                {t('app.description')}
-              </p>
+              <div className="flex flex-col">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent animate-gradient">
+                  FlashYard
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {t('app.description')}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-primary/10 px-6 py-2.5 text-sm font-medium text-primary shadow-sm hover:shadow-md transition-all duration-300 backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-blue-500" />
-                <span className="font-semibold">{decks.length}</span>
-                <span className="text-muted-foreground">{decks.length === 1 ? t('app.deck') : t('app.decks')}</span>
-                <div className="h-4 w-px bg-border mx-2"></div>
-                <span className="font-semibold">{decks.reduce((total, deck) => total + deck.cards.length, 0)}</span>
-                <span className="text-muted-foreground">{t('app.cards')}</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 blur transition duration-300" />
+                <div className="relative rounded-lg border-2 border-primary/20 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 px-4 py-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <div className="flex items-center gap-2">
+                    <Layers className="h-5 w-5 text-primary" />
+                    <div className="text-sm font-medium">
+                      {decks.length} {t('decks.title')}
+                    </div>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {decks.reduce((total, deck) => total + deck.cards.length, 0)} {t('cards.title')}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowTutorial(true)}
+                className="relative group"
+              >
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 blur transition duration-300" />
+                <div className="relative rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 p-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <HelpCircle className="h-5 w-5 text-primary" />
+                </div>
+              </Button>
               <ThemeToggle />
               <LanguageToggle />
             </div>
@@ -253,7 +333,7 @@ function AppContent() {
                 if (window.confirm(t('settings.confirmClearData'))) {
                   setDecks([]);
                   setActiveDeck(null);
-                  localStorage.removeItem('flashcard-decks');
+                  localStorage.removeItem('flashyard-decks');
                 }
               }}
             />
